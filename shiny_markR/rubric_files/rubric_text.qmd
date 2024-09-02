@@ -1,0 +1,13 @@
+## Assessment criteria for [your assignment]
+
+### Overview
+
+Provide an overview of the different marking criteria. For example, based on the default app setup, the marking categories are Analysis, Theoretical Understanding, Coding, and Organisation. Specify the weight each category contributes to the final mark. This should be reflected in your rubric set up (i.e. point boundaries for each category). 
+
+### Detailed assessment criteria
+
+Specify what kind of work is awarded Distinction, Merit, Pass and Fail for each marking category. The breakdown needs to be specific enough so students get a good understanding of how their work is evaluated. 
+
+### How we mark
+
+Explain your marking process. 

@@ -1,0 +1,138 @@
+---
+title: Re-render all feedback files 
+---
+
+Re-rendering might be needed if the rubric is adjusted at some point. The rubric boundaries can be adjusted by editing the `grid` object in the script `../shiny_markR/www/helpers.R`
+
+```{r eval = FALSE}
+# Get filepaths for all quarto docs: 
+all_qmds <- list.files("../shiny_markR/student_feedback_files/qmd", full.names = TRUE)
+
+# Re-render:
+purrr::map(
+  .x = all_qmds, 
+  .f = quarto::quarto_render
+)
+
+# Move html files into the html folder
+all_htmls <- list.files("../shiny_markR/student_feedback_files/qmd", pattern = ".html", full.names = TRUE)
+
+all_htmls_new_dir <- sub("qmd", "html", all_htmls)
+
+purrr::pmap(
+  .l = list(
+    from = all_htmls, 
+    to = all_htmls_new_dir
+  ), 
+  .f = file.rename
+)
+```
+
+Check grades. 
+
+```{r}
+all_csvs <- list.files("../shiny_markR/student_feedback_files/csv", full.names = TRUE)
+
+grade_df <- 
+  purrr::map(
+    .x = all_csvs, 
+    .f = read.csv
+  ) |> 
+  purrr::reduce(
+    .x = _, 
+    .f = rbind
+  ) |> 
+  dplyr::mutate(
+    points_total = points_analysis + points_theory + points_coding + points_org
+  )
+```
+
+
+```{r}
+col_pal = c("#39a4a0", "#9c6a68", "#3679a4", "#edddaf")
+    
+    bin_helper <- 
+      tibble::tibble(
+      points_total = 0:100, 
+      grade_bin = ggplot2::cut_width(points_total, width = 10, boundary = 0, closed = "left") |> 
+        as.character() |> 
+        stringr::str_remove_all(string = _, pattern = "\\[|\\]|\\(|\\)") 
+    ) |> 
+      tidyr::separate(
+        data = _, col = grade_bin, into = c("bin_min", "bin_max"), sep = ","
+      ) |> 
+      dplyr::mutate(
+        bin_max = ifelse(bin_max == "100", "100", as.numeric(bin_max) - 1), 
+        grade_bin = factor(paste0(bin_min, "-", bin_max)), 
+        class = dplyr::case_when(
+          points_total < 50 ~ "Fail", 
+          dplyr::between(points_total, 50, 59) ~ "Pass", 
+          dplyr::between(points_total, 60, 69) ~ "Merit", 
+          points_total >= 70 ~ "Distinction"
+        ) |> factor(x = _, levels = c("Fail", "Pass", "Merit", "Distinction")), 
+      ) |> 
+      dplyr::select(points_total, grade_bin, class)
+
+grade_df |> 
+  dplyr::left_join(bin_helper, by = "points_total") |> 
+  ggplot2::ggplot(data = _, aes(x = grade_bin, color = class, fill = class)) + 
+  #geom_bar(aes(y = after_stat(count)/sum(after_stat(count))), alpha = 0.75) +
+  geom_bar(alpha = 0.75) +
+  #scale_y_continuous(breaks = seq(0, 1, 0.02)) +
+  scale_y_continuous(breaks = seq(0, 15, 1)) +
+  scale_x_discrete(drop = FALSE) +
+  scale_colour_manual(values = col_pal) + 
+  scale_fill_manual(values = col_pal) + 
+  labs(x = "Mark (%)", y = "Proportion of students", colour = "Classification", fill = "Classification") + 
+  theme_minimal()
+```
+
+
+
+```{r}
+grade_df |> 
+  dplyr::summarise(
+    marker = "MS", 
+    mean = mean(points_total), 
+    lower_ci = ggplot2::mean_cl_normal(points_total)$ymin,
+    upper_ci = ggplot2::mean_cl_normal(points_total)$ymax,
+    sd = sd(points_total)
+  ) |> 
+  dplyr::bind_rows(
+    tibble::tibble(
+      marker = "AF", 
+      mean = 69.24, 
+      lower_ci = 64.26, 
+      upper_ci = 74.23, 
+      sd = 14.95
+    )
+  ) |> 
+  ggplot2::ggplot(aes(x = marker, y = mean, ymin = lower_ci, ymax = upper_ci)) + 
+  geom_point() + 
+  geom_errorbar(width = 0.1) + 
+  coord_cartesian(ylim = c(0, 100)) + 
+  theme_light()
+```
+
+```{r}
+grade_df |> 
+  dplyr::filter(is.na(comments_overall))
+```
+
+
+```{r}
+#writexl::write_xlsx(grade_df, "../shiny_markR/student_feedback_files/tap_02_all_feedback.xlsx")
+```
+
+```{r}
+grade_df |> 
+  dplyr::arrange(desc(points_total)) |> 
+  dplyr::select(cand_no, points_total) |> 
+  dplyr::filter(dplyr::between(points_total, 50, 59))
+```
+
+
+```{r}
+generate_rubric(grid = grid)
+```
+

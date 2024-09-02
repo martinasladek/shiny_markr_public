@@ -1,0 +1,11 @@
+---
+title:
+format: 
+ html: 
+  self-contained: true
+  toc: true
+css: "../../www/css.css"    
+knitr: 
+  opts_chunk: 
+    eval: false
+---

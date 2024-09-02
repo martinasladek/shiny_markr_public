@@ -1,0 +1,31 @@
+
+/* Remove default stripes from the table */
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+    --bs-table-accent-bg: transparent;
+    color: var(--bs-table-striped-color);
+}
+
+/* Remove default borders from the table */
+
+.table>:not(caption)>*:not(:last-child)>* {
+    border-bottom-color: #d3d8dc;
+    border-bottom-style: solid;
+    border-bottom-width: 0px;
+}
+
+/* Define rubric font */
+.rubric-font {
+  margin-top: 1rem
+}
+
+/*Lock sidebar*/
+
+.left-side, .main-sidebar {
+    position: fixed;
+}
+
+/* TOC styling*/
+
+.toc-link a:hover {
+    color: white;
+}
